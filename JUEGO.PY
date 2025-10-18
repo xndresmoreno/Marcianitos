@@ -1,113 +1,74 @@
-import pygame #libreria para crear juegos en 2D
-import random #para generar situaciones aleatorias 
+import pygame
+import sys
 
-pygame.init() #inicializa los modulos del Pygame
-pygame.mixer.init() #para inicializar el sonido que en el futuro añadiremos
+#Inicializar pygame
+pygame.init()
 
-#fondo = pygame.image.
-#laser_sonido= 
-#explosion_sonido=
-#golpe_sonido=
+#Configuración de pantalla
+ANCHO, ALTO = 800, 600
+VENTANA = pygame.display.set_mode((ANCHO, ALTO))
+pygame.display.set_caption("Mini Space Invaders - Solo Nave")
 
-#BUCLE QUE EJECUTA LA EXPLOSION ANIMADA
-explosion_list = []
-for i in range (1,13):
-    explosion = pygame.image.load
-    explosion_list.append(explosion)
+#Colores
+NEGRO = (0, 0, 0)
+VERDE = (0, 255, 0)
+BLANCO = (255, 255, 255)
 
-#TAMAÑO DE LA VENTANA DEL JUEGO 
-width = fondo.get_width() #devuelve el ancho 
-height = fondo.get_height() #devuelve el alto
-window = pygame.display.set_mode((width, height)) #crea la ventana del juego
+#Reloj para controlar FPS
+FPS = 60
+clock = pygame.time.Clock()
 
+#Propiedades de la nave
+nave_ancho = 60
+nave_alto = 20
+nave_x = ANCHO // 2 - nave_ancho // 2
+nave_y = ALTO - 50
+velocidad_nave = 7
 
-#CARGAMOS AL JUGADOR Y LO COLOCAMOS CENTROADO HORIZONTALMENTE CERCA DE LA PARTE INFERIOR DE LA PANTALLA
-class Jugador (pygame.sprite.Sprite):
-    def __init__ (self):
-        super().__init__()
-        self.image = pygame.image.load().convert_alpha()
-        pygame.display.set_icon(self.image)
-        self.rect = self.image.get_rect()
-        self.rect.centerx = width//2
-        self.rect.centery = height - 50 
-        self.velocidad_x = 0 
-        self.vida = 100
+#Balas
+balas = []
+velocidad_bala = -10
+radio_bala = 3
 
-        #METODO PARA ACTUALIZAR EL JUGADOR, MOVERLO Y LIMITARLO EN LOS BORDES 
+#Bucle principal del juego
+ejecutando = True
+while ejecutando:
+    clock.tick(FPS)
+    VENTANA.fill(NEGRO)
 
+    #Eventos
+    for evento in pygame.event.get():
+        if evento.type == pygame.QUIT:
+            ejecutando = False
+        if evento.type == pygame.KEYDOWN:
+            if evento.key == pygame.K_SPACE:
+                # Crear una bala en el centro de la nave
+                bala_x = nave_x + nave_ancho // 2
+                bala_y = nave_y
+                balas.append([bala_x, bala_y])
 
+    #Movimiento de la nave
+    teclas = pygame.key.get_pressed()
+    if teclas[pygame.K_LEFT] and nave_x > 0:
+        nave_x -= velocidad_nave
+    if teclas[pygame.K_RIGHT] and nave_x < ANCHO - nave_ancho:
+        nave_x += velocidad_nave
 
-        #METODO PARA DISPARAR 
-        
-#REPRESENTA A LOS ENEMIGOS, SE COLOCAN EN UNA POSICION ALEATORIA, DESDE ARRIBA, CON UAN VELOCIDAD ALEATORAIA 
-class Enemigos (pygame.sprite.Sprite):
-    def __init__ (self, x, y):
-        super().__init__()
-        self.image = pygame.image.load
-        self.rect = self.image.get_rect()
-        self.rect.x = random.randrange(1, width-50)
-        self.rect.y = 10
-        self.velocidad_y = random.randrange(-5, 20)
+    #Movimiento de las balas
+    for bala in balas:
+        bala[1] += velocidad_bala
+    # Eliminar balas que salen de la pantalla
+    balas = [b for b in balas if b[1] > 0]
 
-        #METODO PARA ACTUALIZAR EL ENEMIGO 
-        
-        #METODO PARA DISPARAR ENEMIGOS
+    # Dibujar nave
+    pygame.draw.rect(VENTANA, VERDE, (nave_x, nave_y, nave_ancho, nave_alto))
+    # Dibujar balas
+    for bala in balas:
+        pygame.draw.circle(VENTANA, BLANCO, (bala[0], bala[1]), radio_bala)
 
-#REPRESENTA LAS BALAS QUE DISPARA EL JUGADOR, SE MUEVEN HACIA ARRIBA 
-class Balas(pygame.sprite.Sprite):
-    def __init__(self, x,y):
-        super().__init__()
-        self.image = pygame.image.load().convert_alpha()
-        self.rect = self.image.get_rect()
-        self.rect.centerx = x 
-        self.rect.y = y 
-        self.velocidad = -18
+    #Actualizar pantalla
+    pygame.display.flip()
 
-        #metodo actualizar 
-
-#REPRESENTA LAS BALAS QUE DISPARAN LOS ENEMIGOS, SE MUEVEN HACIA ABAJO 
-class Balas_enemigos(pygame.sprite.Sprite):
-    def __init__(self, x, y):
-        super().__init__()
-        self.image = pygame.image.load().convert_alpha()
-        self.image = pygame.transform.rotate(self.image, 180)
-        self.rect = self.image.get_rect()
-        self.rect.centerx = x
-        self.rect.y = random.randrange(10, width)
-        self.velocidad_y = 4
-
-        #metodo actualizar 
-
-#SE USA PARA ANIMAR UNA EXPLOSION EN LA POSICION DONDE UN ENEMIGO MUERE O UNA BALA IMPACTA 
-class Explosion(pygame.sprite.Sprite):
-    def __init__(self, position):
-        super().__init__()
-        self.image = explosion_list[0]
-        img_scala = pygame.transform.scale(self.image, (20,20))
-        self.rect = img_scala.get_rect()
-        self.rect.center = position
-        self.time = pygame.time.get_ticks()
-        self.velocidad_explo = 30
-        self.frames = 0 
-
-        #METODO PARA ACTUALIZAR
-
-#CREAMOS UNOS GRUPOS QUE PERMIEN MANEJAR Y DIBUJAR VARIOS OBJETOS A LA VEZ 
-grupo_jugador = pygame.sprite.Group()
-grupo_enemigos = pygame.sprite.Group()
-grupo_balas_jugador = pygame.sprite.Group()
-
-
-#CREA A EL JUGADOR Y LO AÑADE A LOS GRUPOS 
-player = Jugador()
-grupo_jugador.add(player)
-grupo_balas_jugador.add(player)
-
-#CREA A LOS ENEMIGOS 
-for x in range (10):
-    enemigo = Enemigos(10,10)
-    grupo_enemigos.add(enemigo)
-    grupo_jugador.add(enemigo)
-
-#FUNCION DE EJECUCION 
-
+#Salir del juego
+pygame.quit()
+sys.exit()
