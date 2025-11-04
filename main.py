@@ -2,69 +2,39 @@ import pygame
 import sys
 import random
 import os
+from config import *
 
-BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-
+# Inicializar pygame
 pygame.init()
 
-ANCHO, ALTO = 800, 600
-VENTANA = pygame.display.set_mode((ANCHO, ALTO))
-pygame.display.set_caption("MARCIANITOS")
-
-NEGRO = (0, 0, 0)
-BLANCO = (255, 255, 255)
-VERDE = (0, 255, 0)
-AZUL = (0, 150, 255)
-ROJO = (255, 0, 0)
-AMARILLO = (255, 255, 0)
-MORADO = (180, 0, 255)
-GRIS = (100, 100, 100)
-
-FPS = 60
+# Configurar ventana
+VENTANA = pygame.display.set_mode((PYGAME_CONFIG['ANCHO'], PYGAME_CONFIG['ALTO']))
+pygame.display.set_caption(PYGAME_CONFIG['CAPTION'])
 clock = pygame.time.Clock()
 
-HIGHSCORE_FILE = "highscore.txt"
+# Cargar imágenes
+if not cargar_imagenes():
+    sys.exit()
 
-try:
-    
-    IMAGEN_NAVE_JUGADOR = pygame.image.load(os.path.join(BASE_DIR, "IMAGENES", "E1.webp")).convert_alpha()
-    IMAGEN_MARCIANITO_LVL1 = pygame.image.load(os.path.join(BASE_DIR, "IMAGENES", "E1.webp")).convert_alpha()
-    IMAGEN_MARCIANITO_LVL2 = pygame.image.load(os.path.join(BASE_DIR, "IMAGENES", "E1.webp")).convert_alpha() 
-    IMAGEN_MARCIANITO_LVL3 = pygame.image.load(os.path.join(BASE_DIR, "IMAGENES", "O2.webp")).convert_alpha() 
-    IMAGEN_MARCIANITO_LVL4 = pygame.image.load(os.path.join(BASE_DIR, "IMAGENES", "O2.webp")).convert_alpha() 
-    IMAGEN_BOSS_ALIEN = pygame.image.load(os.path.join(BASE_DIR, "IMAGENES", "finalboss.webp")).convert_alpha()
-    IMAGEN_FONDO = pygame.image.load(os.path.join(BASE_DIR, "IMAGENES", "fondo.webp")).convert()
-    IMAGEN_POTENCIADOR = pygame.image.load(os.path.join(BASE_DIR, "IMAGENES", "potenciador.webp")).convert_alpha()
-    IMAGEN_EXPLOSION = pygame.image.load(os.path.join(BASE_DIR, "IMAGENES", "explosion.webp")).convert_alpha()
-    IMAGEN_NAVE_JUGADOR = pygame.transform.scale(IMAGEN_NAVE_JUGADOR, (60, 40)) 
-    IMAGEN_MARCIANITO_LVL1 = pygame.transform.scale(IMAGEN_MARCIANITO_LVL1, (40, 40))
-    IMAGEN_MARCIANITO_LVL2 = pygame.transform.scale(IMAGEN_MARCIANITO_LVL2, (40, 40))
-    IMAGEN_MARCIANITO_LVL3 = pygame.transform.scale(IMAGEN_MARCIANITO_LVL3, (40, 40))
-    IMAGEN_MARCIANITO_LVL4 = pygame.transform.scale(IMAGEN_MARCIANITO_LVL4, (40, 40))
-    IMAGEN_BOSS_ALIEN = pygame.transform.scale(IMAGEN_BOSS_ALIEN, (200, 120)) 
-    IMAGEN_FONDO = pygame.transform.scale(IMAGEN_FONDO, (ANCHO, ALTO))
-    IMAGEN_POTENCIADOR = pygame.transform.scale(IMAGEN_POTENCIADOR, (20, 20))
-    IMAGEN_EXPLOSION = pygame.transform.scale(IMAGEN_EXPLOSION, (40, 40))
-
-except pygame.error as e:
-    print(f"Error al cargar una imagen: {e}")
-    print("Asegúrate de que las imágenes estén en la carpeta IMAGENES y sean válidas.")
-    sys.exit() 
-
+# El resto del código permanece igual, pero reemplaza las referencias a las variables antiguas
+# Por ejemplo:
+# ANTES: IMAGEN_NAVE_JUGADOR -> AHORA: IMAGENES['NAVE_JUGADOR']
+# ANTES: ANCHO -> AHORA: PYGAME_CONFIG['ANCHO']
+# ANTES: BLANCO -> AHORA: COLORES['BLANCO']
 
 def cargar_highscore():
-    if os.path.exists(HIGHSCORE_FILE):
+    if os.path.exists(ARCHIVOS['HIGHSCORE_FILE']):
         try:
-            with open(HIGHSCORE_FILE, "r") as f:
+            with open(ARCHIVOS['HIGHSCORE_FILE'], "r") as f:
                 return int(f.read().strip())
         except ValueError:
-            print(f"Advertencia: El archivo {HIGHSCORE_FILE} contiene un valor no válido. Reseteando a 0.")
+            print(f"Advertencia: El archivo {ARCHIVOS['HIGHSCORE_FILE']} contiene un valor no válido. Reseteando a 0.")
             return 0
     return 0
 
 def guardar_highscore(puntaje):
     try:
-        with open(HIGHSCORE_FILE, "w") as f:
+        with open(ARCHIVOS['HIGHSCORE_FILE'], "w") as f:
             f.write(str(puntaje))
     except IOError as e:
         print(f"Error al guardar highscore: {e}")
@@ -72,7 +42,7 @@ def guardar_highscore(puntaje):
 def mostrar_texto(texto, tamano, color, y_offset=0):
     fuente = pygame.font.Font(None, tamano)
     superficie = fuente.render(texto, True, color)
-    rect = superficie.get_rect(center=(ANCHO // 2, ALTO // 2 + y_offset))
+    rect = superficie.get_rect(center=(PYGAME_CONFIG['ANCHO'] // 2, PYGAME_CONFIG['ALTO'] // 2 + y_offset))
     VENTANA.blit(superficie, rect)
 
 class Actor:
@@ -88,10 +58,48 @@ class Actor:
     def dibujar(self, superficie):
         pass
 
+class DEMO(Actor):
+    def __init__(self, x, y):
+        super().__init__(x, y)
+        self.velocidad = 0
+        self.direccion = 1
+        self.ancho = 0
+        self.alto = 0
+        
+    def actualizar(self):
+        """Método base para movimiento horizontal con rebote en los bordes"""
+        self.x += self.velocidad * self.direccion
+        if self.x <= 0 or self.x + self.ancho >= PYGAME_CONFIG['ANCHO']:
+            self.direccion *= -1
+            
+    def dibujar(self, superficie):
+        """Método base para dibujar la imagen del objeto"""
+        if self.imagen:
+            superficie.blit(self.imagen, (self.x, self.y))
+
+class DemoNave(DEMO):
+    def __init__(self, x, y):
+        super().__init__(x, y)
+        self.imagen = IMAGENES['NAVE_JUGADOR']
+        self.ancho = self.imagen.get_width()
+        self.alto = self.imagen.get_height()
+        self.velocidad = 3
+
+    def disparar(self):
+        return BalaJugador(self.x + self.ancho // 2, self.y)
+
+class DemoEnemigo(DEMO):
+    def __init__(self, x, y):
+        super().__init__(x, y)
+        self.imagen = IMAGENES['MARCIANITO_LVL1']
+        self.ancho = self.imagen.get_width()
+        self.alto = self.imagen.get_height()
+        self.velocidad = 2
+
 class NaveJugador(Actor):
     def __init__(self, x, y):
-        super().__init__(x, y, VERDE)
-        self.imagen = IMAGEN_NAVE_JUGADOR 
+        super().__init__(x, y, COLORES['VERDE'])
+        self.imagen = IMAGENES['NAVE_JUGADOR']
         self.ancho = self.imagen.get_width() 
         self.alto = self.imagen.get_height() 
         self.velocidad = 7
@@ -106,13 +114,13 @@ class NaveJugador(Actor):
     def mover(self, teclas):
         if teclas[pygame.K_LEFT] and self.x > 0:
             self.x -= self.velocidad
-        if teclas[pygame.K_RIGHT] and self.x < ANCHO - self.ancho:
+        if teclas[pygame.K_RIGHT] and self.x < PYGAME_CONFIG['ANCHO'] - self.ancho:
             self.x += self.velocidad
         
         if self.x < 0:
             self.x = 0
-        if self.x > ANCHO - self.ancho:
-            self.x = ANCHO - self.ancho
+        if self.x > PYGAME_CONFIG['ANCHO'] - self.ancho:
+            self.x = PYGAME_CONFIG['ANCHO'] - self.ancho
 
     def puede_disparar(self):
         return pygame.time.get_ticks() - self.ultimo_disparo >= self.tiempo_recarga
@@ -144,8 +152,8 @@ class NaveJugador(Actor):
     def dibujar(self, superficie):
         superficie.blit(self.imagen, (self.x, self.y)) 
         fuente = pygame.font.Font(None, 32)
-        texto = fuente.render(f"Vidas: {self.vidas}", True, AMARILLO)
-        superficie.blit(texto, (ANCHO - 150, 10))
+        texto = fuente.render(f"Vidas: {self.vidas}", True, COLORES['AMARILLO'])
+        superficie.blit(texto, (PYGAME_CONFIG['ANCHO'] - 150, 10))
 
 class Bala(Actor):
     def __init__(self, x, y, color, velocidad):
@@ -157,14 +165,14 @@ class Bala(Actor):
         self.y += self.velocidad
 
     def fuera(self):
-        return self.y < 0 or self.y > ALTO
+        return self.y < 0 or self.y > PYGAME_CONFIG['ALTO']
 
     def dibujar(self, superficie):
         pygame.draw.circle(superficie, self.color, (int(self.x), int(self.y)), self.radio)
 
 class BalaJugador(Bala):
     def __init__(self, x, y):
-        super().__init__(x, y, BLANCO, -8)
+        super().__init__(x, y, COLORES['BLANCO'], -8)
 
     def colisiona(self, enemigo):
         if enemigo.imagen:
@@ -177,13 +185,13 @@ class BalaJugador(Bala):
 
 class BalaEnemigo(Bala):
     def __init__(self, x, y):
-        super().__init__(x, y, AMARILLO, 5)
+        super().__init__(x, y, COLORES['AMARILLO'], 5)
 
 class Potenciador(Actor):
     def __init__(self, x, y, tipo):
         super().__init__(x, y) 
         self.tipo = tipo
-        self.imagen = IMAGEN_POTENCIADOR 
+        self.imagen = IMAGENES['POTENCIADOR']
         self.ancho = self.imagen.get_width() 
         self.alto = self.imagen.get_height() 
         self.velocidad = 3
@@ -195,7 +203,7 @@ class Potenciador(Actor):
         superficie.blit(self.imagen, (self.x, self.y))
 
     def fuera(self):
-        return self.y > ALTO
+        return self.y > PYGAME_CONFIG['ALTO']
 
     def colisiona_con_jugador(self, jugador):
         jugador_rect = jugador.imagen.get_rect(topleft=(jugador.x, jugador.y))
@@ -205,7 +213,7 @@ class Potenciador(Actor):
 class Explosion(Actor):
     def __init__(self, x, y, tamano_escala=1.0):
         super().__init__(x, y)
-        self.imagen_original = IMAGEN_EXPLOSION
+        self.imagen_original = IMAGENES['EXPLOSION']
         self.imagen = pygame.transform.scale(self.imagen_original, 
                                             (int(self.imagen_original.get_width() * tamano_escala), 
                                              int(self.imagen_original.get_height() * tamano_escala)))
@@ -222,61 +230,24 @@ class Explosion(Actor):
     def dibujar(self, superficie):
         superficie.blit(self.imagen, (self.x, self.y))
 
-class DemoNave(Actor):
-    def __init__(self, x, y):
-        super().__init__(x, y)
-        self.imagen = IMAGEN_NAVE_JUGADOR
-        self.ancho = self.imagen.get_width()
-        self.alto = self.imagen.get_height()
-        self.velocidad = 3
-        self.direccion = 1
-
-    def actualizar(self):
-        self.x += self.velocidad * self.direccion
-        if self.x <= 0 or self.x + self.ancho >= ANCHO:
-            self.direccion *= -1
-
-    def disparar(self):
-        return BalaJugador(self.x + self.ancho // 2, self.y)
-    
-    def dibujar(self, superficie):
-        superficie.blit(self.imagen, (self.x, self.y))
-
-class DemoEnemigo(Actor):
-    def __init__(self, x, y):
-        super().__init__(x, y)
-        self.imagen = IMAGEN_MARCIANITO_LVL1 
-        self.ancho = self.imagen.get_width()
-        self.alto = self.imagen.get_height()
-        self.velocidad = 2
-        self.direccion = 1
-    
-    def actualizar(self):
-        self.x += self.velocidad * self.direccion
-        if self.x <= 0 or self.x + self.ancho >= ANCHO:
-            self.direccion *= -1
-    
-    def dibujar(self, superficie):
-        superficie.blit(self.imagen, (self.x, self.y))
-
 class Enemigo(Actor):
     def __init__(self, x, y, nivel):
         super().__init__(x, y) 
         
         if nivel == 1:
-            self.imagen = IMAGEN_MARCIANITO_LVL1
+            self.imagen = IMAGENES['MARCIANITO_LVL1']
             self.vida = 1
         elif nivel == 2:
-            self.imagen = IMAGEN_MARCIANITO_LVL2
+            self.imagen = IMAGENES['MARCIANITO_LVL2']
             self.vida = 1
         elif nivel == 3:
-            self.imagen = IMAGEN_MARCIANITO_LVL3
+            self.imagen = IMAGENES['MARCIANITO_LVL3']
             self.vida = 2
         elif nivel == 4:
-            self.imagen = IMAGEN_MARCIANITO_LVL4
+            self.imagen = IMAGENES['MARCIANITO_LVL4']
             self.vida = 2
         else: 
-            self.imagen = IMAGEN_MARCIANITO_LVL4 
+            self.imagen = IMAGENES['MARCIANITO_LVL4']
             self.vida = 3
 
         self.ancho = self.imagen.get_width()
@@ -289,7 +260,7 @@ class Enemigo(Actor):
 
     def actualizar(self):
         self.x += self.velocidad * self.direccion
-        if self.x <= 0 or self.x + self.ancho >= ANCHO:
+        if self.x <= 0 or self.x + self.ancho >= PYGAME_CONFIG['ANCHO']:
             self.direccion *= -1
             self.y += 20  
 
@@ -308,8 +279,8 @@ class Enemigo(Actor):
 
 class Boss(Actor):
     def __init__(self, nivel):
-        super().__init__(ANCHO // 2 - 100, 80, MORADO)
-        self.imagen = IMAGEN_BOSS_ALIEN 
+        super().__init__(PYGAME_CONFIG['ANCHO'] // 2 - 100, 80, COLORES['MORADO'])
+        self.imagen = IMAGENES['BOSS_ALIEN']
         self.ancho = self.imagen.get_width() 
         self.alto = self.imagen.get_height() 
         self.vida_max = 30 + nivel * 10
@@ -324,7 +295,7 @@ class Boss(Actor):
 
     def actualizar(self):
         self.x += self.velocidad * self.direccion
-        if self.x <= 0 or self.x + self.ancho >= ANCHO:
+        if self.x <= 0 or self.x + self.ancho >= PYGAME_CONFIG['ANCHO']:
             self.direccion *= -1
 
     def disparar(self):
@@ -345,11 +316,11 @@ class Boss(Actor):
     def dibujar(self, superficie):
         superficie.blit(self.imagen, (self.x, self.y)) 
         vida_ratio = self.vida / self.vida_max
-        pygame.draw.rect(superficie, ROJO, (ANCHO // 2 - 200, 20, 400, 20)) 
-        pygame.draw.rect(superficie, VERDE, (ANCHO // 2 - 200, 20, 400 * vida_ratio, 20))
+        pygame.draw.rect(superficie, COLORES['ROJO'], (PYGAME_CONFIG['ANCHO'] // 2 - 200, 20, 400, 20)) 
+        pygame.draw.rect(superficie, COLORES['VERDE'], (PYGAME_CONFIG['ANCHO'] // 2 - 200, 20, 400 * vida_ratio, 20))
 
 def menu_principal():
-    demo_nave = DemoNave(ANCHO // 2 - 30, ALTO - 100)
+    demo_nave = DemoNave(PYGAME_CONFIG['ANCHO'] // 2 - 30, PYGAME_CONFIG['ALTO'] - 100)
     
     def crear_enemigos_demo():
         return [DemoEnemigo(150 + c * 80, 100) for c in range(6)]
@@ -359,7 +330,7 @@ def menu_principal():
     demo_explosiones = []
 
     while True:
-        clock.tick(FPS) 
+        clock.tick(PYGAME_CONFIG['FPS'])
 
         for e in pygame.event.get():
             if e.type == pygame.QUIT:
@@ -395,21 +366,21 @@ def menu_principal():
         if not demo_enemigos:
             demo_enemigos = crear_enemigos_demo()
             
-        VENTANA.blit(IMAGEN_FONDO, (0, 0)) 
+        VENTANA.blit(IMAGENES['FONDO'], (0, 0))
         
         demo_nave.dibujar(VENTANA)
         for e in demo_enemigos: e.dibujar(VENTANA)
         for b in demo_balas: b.dibujar(VENTANA)
         for exp in demo_explosiones: exp.dibujar(VENTANA)
 
-        mostrar_texto("MARCIANITOS", 72, BLANCO, -100)
-        mostrar_texto("1. JUGAR", 48, BLANCO, -20)
-        mostrar_texto("2. SALIR", 48, BLANCO, 40)
+        mostrar_texto("MARCIANITOS", 72, COLORES['BLANCO'], -100)
+        mostrar_texto("1. JUGAR", 48, COLORES['BLANCO'], -20)
+        mostrar_texto("2. SALIR", 48, COLORES['BLANCO'], 40)
         
         pygame.display.flip() 
 
 def game_loop():
-    jugador = NaveJugador(ANCHO // 2 - 30, ALTO - 50)
+    jugador = NaveJugador(PYGAME_CONFIG['ANCHO'] // 2 - 30, PYGAME_CONFIG['ALTO'] - 50)
     nivel = 1
     puntaje = 0
     highscore = cargar_highscore()
@@ -431,7 +402,7 @@ def game_loop():
     explosiones = [] 
 
     while True: 
-        clock.tick(FPS)
+        clock.tick(PYGAME_CONFIG['FPS'])
 
         for evento in pygame.event.get():
             if evento.type == pygame.QUIT:
@@ -551,14 +522,14 @@ def game_loop():
                 enemigos, es_boss = generar_enemigos(nivel)
                 balas_jugador.clear()
                 balas_enemigas.clear()
-                jugador.x = ANCHO // 2 - jugador.ancho // 2
+                jugador.x = PYGAME_CONFIG['ANCHO'] // 2 - jugador.ancho // 2
                 
-                VENTANA.fill(NEGRO)
-                mostrar_texto(f"NIVEL {nivel}", 60, BLANCO)
+                VENTANA.fill(COLORES['NEGRO'])
+                mostrar_texto(f"NIVEL {nivel}", 60, COLORES['BLANCO'])
                 pygame.display.flip()
                 pygame.time.delay(1500)
 
-        VENTANA.blit(IMAGEN_FONDO, (0, 0)) 
+        VENTANA.blit(IMAGENES['FONDO'], (0, 0))
 
         jugador.dibujar(VENTANA)
         for e in enemigos: e.dibujar(VENTANA)
@@ -568,24 +539,24 @@ def game_loop():
         for exp in explosiones: exp.dibujar(VENTANA) 
 
         fuente = pygame.font.Font(None, 36)
-        VENTANA.blit(fuente.render(f"Puntos: {puntaje}", True, BLANCO), (10, 10))
-        VENTANA.blit(fuente.render(f"Récord: {highscore}", True, AMARILLO), (10, 50))
-        VENTANA.blit(fuente.render(f"Nivel: {nivel}", True, AZUL), (10, 90))
+        VENTANA.blit(fuente.render(f"Puntos: {puntaje}", True, COLORES['BLANCO']), (10, 10))
+        VENTANA.blit(fuente.render(f"Récord: {highscore}", True, COLORES['AMARILLO']), (10, 50))
+        VENTANA.blit(fuente.render(f"Nivel: {nivel}", True, COLORES['AZUL']), (10, 90))
         
         if jugador.potenciador_activo:
             tiempo_restante = (jugador.potenciador_tiempo_fin - pygame.time.get_ticks()) // 1000 + 1
-            texto_pot = fuente.render(f"TRIPLE: {tiempo_restante}s", True, AMARILLO)
+            texto_pot = fuente.render(f"TRIPLE: {tiempo_restante}s", True, COLORES['AMARILLO'])
             VENTANA.blit(texto_pot, (10, 130))
 
         if game_over:
-            mostrar_texto("¡GAME OVER!", 60, ROJO)
-            mostrar_texto("Presiona R para reiniciar o M para menú", 36, BLANCO, 60)
+            mostrar_texto("¡GAME OVER!", 60, COLORES['ROJO'])
+            mostrar_texto("Presiona R para reiniciar o M para menú", 36, COLORES['BLANCO'], 60)
         elif ganaste and es_boss:
-            mostrar_texto("¡HAS VENCIDO AL JEFE!", 60, BLANCO)
-            mostrar_texto("Presiona R para reiniciar o M para menú", 36, BLANCO, 60)
+            mostrar_texto("¡HAS VENCIDO AL JEFE!", 60, COLORES['BLANCO'])
+            mostrar_texto("Presiona R para reiniciar o M para menú", 36, COLORES['BLANCO'], 60)
         elif ganaste and not es_boss: 
-            mostrar_texto("¡HAS GANADO!", 60, BLANCO)
-            mostrar_texto("Presiona R para reiniciar o M para menú", 36, BLANCO, 60)
+            mostrar_texto("¡HAS GANADO!", 60, COLORES['BLANCO'])
+            mostrar_texto("Presiona R para reiniciar o M para menú", 36, COLORES['BLANCO'], 60)
             
 
         pygame.display.flip()
