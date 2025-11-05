@@ -22,12 +22,7 @@ Este README explica **cómo clonar, configurar y ejecutar** el juego `MARCIANITO
    ```bash
    pip install -r requirements.txt
    ```
-5. Crea el archivo de highscore si no existe:
-   ```bash
-   echo 0 > highscore.txt
-   ```
-   (o crea un archivo vacío llamado `highscore.txt` en la raíz)
-6. Ejecuta el juego:
+5. Ejecuta el juego:
    ```bash
    python main.py
    ```
@@ -85,7 +80,7 @@ pip install -r requirements.txt
 El archivo [`requirements.txt`](requirements.txt) incluye:
 
 ```
-pygame>=2.6.0
+pygame>=2.6.1
 ```
 
 Si instalas nuevas librerías, actualiza el archivo ejecutando:
