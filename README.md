@@ -15,7 +15,8 @@ Este README explica **cómo clonar, configurar y ejecutar** el juego `MARCIANITO
    cd Marcianitos
    ```
 3. Crea y activa un entorno virtual:
-   - Windows (PowerShell): `python -m venv .venv; .\.venv\Scripts\Activate.ps1`
+   - Windows (PowerShell): `python -m venv .venv; .\.venv\Scripts\Activate.ps1` (Si da error ejecutar este comadno desde la terminal de visual Set-ExecutionPolicy -Scope CurrentUser -ExecutionPolicy RemoteSigned)
+
    - Windows (cmd): `python -m venv .venv && .\.venv\Scripts\activate.bat`
    - macOS / Linux: `python3 -m venv .venv && source .venv/bin/activate`
 4. Instala dependencias:
